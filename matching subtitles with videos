@@ -1,0 +1,40 @@
+import os
+from difflib import SequenceMatcher
+
+def similar(a, b):
+    return SequenceMatcher(None, a, b).ratio()
+
+# specify the directory where your files are
+directory = r'C:\Users\LENOVO\Downloads\luicito comunica\videos'
+
+# get list of all files in directory
+files = os.listdir(directory)
+
+# separate video and subtitle files
+video_files = [f for f in files if f.endswith('.mp4')]  # replace with your video file extension
+subtitle_files = [f for f in files if f.endswith('.srt')]  # replace with your subtitle file extension
+
+# iterate over video files
+for video_file in video_files:
+    # remove extension from video file name
+    video_name = os.path.splitext(video_file)[0]
+
+    # find matching subtitle file
+    max_similarity = 0
+    matching_subtitle_file = None
+    for subtitle_file in subtitle_files:
+        # remove extension from subtitle file name
+        subtitle_name = os.path.splitext(subtitle_file)[0]
+
+        # calculate similarity between video and subtitle names
+        similarity = similar(video_name, subtitle_name)
+        if similarity > max_similarity:
+            max_similarity = similarity
+            matching_subtitle_file = subtitle_file
+
+    # if a matching subtitle file was found, rename video file to match subtitle file
+    if matching_subtitle_file is not None:
+        new_video_name_base = os.path.splitext(matching_subtitle_file)[0]
+        new_video_name = new_video_name_base + '.mp4'  # replace with your video file extension
+
+        os.rename(os.path.join(directory, video_file), os.path.join(directory, new_video_name))
