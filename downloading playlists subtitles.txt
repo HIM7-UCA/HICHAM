@@ -1,0 +1,51 @@
+from pytube import Playlist
+from pytube import YouTube
+from youtube_transcript_api import YouTubeTranscriptApi
+from youtube_transcript_api.formatters import SRTFormatter
+import os
+import re
+
+# Define constants for the file path of YouTube links and the location to save transcripts
+PLAYLIST_URL = "https://www.youtube.com/watch?v=zouPoc49xbk&list=PL8dPuuaLjXtNM_Y-bUAhblSAdWRnmBUcr"
+DEFAULT_LOCATION = os.path.join(os.environ["HOMEPATH"], "Desktop", "Statistics")
+
+# Function to sanitize a string to be used as a filename
+def sanitize_filename(filename):
+    return re.sub(r'[\\/*?:"<>|]', "", filename)
+
+# Function to download SRT transcript for a given YouTube link
+def download_srt(youtube_link):
+    # Create a YouTube object
+    yt = YouTube(youtube_link)
+    # Get the video ID and sanitized title
+    video_id = yt.video_id
+    video_title = sanitize_filename(yt.title)
+
+    # Get the list of transcripts for the video
+    transcript_list = YouTubeTranscriptApi.list_transcripts(video_id)
+    # Fetch the English, English auto-generated, or Spanish transcript
+    try:
+        transcript = transcript_list.find_transcript(['en'])
+    except:
+        try:
+            transcript = transcript_list.find_transcript(['en-GB', 'en-US'])
+        except:
+            transcript = transcript_list.find_transcript(['es'])
+    
+    # Fetch and format the transcript into SRT format
+    formatter = SRTFormatter().format_transcript(transcript.fetch())
+
+    # Create the directory if it doesn't exist
+    if not os.path.exists(DEFAULT_LOCATION):
+        os.makedirs(DEFAULT_LOCATION)
+
+    # Write the formatted transcript to a file
+    with open(os.path.join(DEFAULT_LOCATION, f"{video_title}.srt"), "w", encoding="utf-8-sig") as transcript_file:
+        transcript_file.write(formatter)
+
+# Create a Playlist object
+playlist = Playlist(PLAYLIST_URL)
+
+# For each link in the playlist, download the SRT transcript
+for youtube_link in playlist.video_urls:
+    download_srt(youtube_link)
